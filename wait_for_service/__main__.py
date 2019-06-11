@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 
 import sys
+import os
 
 from argparse import ArgumentParser
 from enum import Enum
 from subprocess import call
 
-
-def version():
-    return 'Version: {0}'.format(1.0)
+from wait_for_service import __version__
 
 
 def check_retcode_for_error(parser: ArgumentParser, retcode: int):
@@ -30,10 +29,11 @@ def main():
     parser.add_argument('--port', '-p', type=int, required=True, help='Specify the service port.')
     parser.add_argument('--service', '-s', type=str, help='Specify the name of the service. (Mandatory for waiting type {0})'.format(WaitingType.CONSUL))
     parser.add_argument('--type', '-t', type=WaitingType, choices=list(WaitingType), default=WaitingType.BASIC, help='Specify the waiting algorithm. (Default: %(default)s)')
-    parser.add_argument('--version', action='version', version=version())
+    parser.add_argument('--version', action='version', version=__version__)
     args = parser.parse_args()
 
-    script_name = "{0}-scripts/wait-for-service".format(str(args.type))
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    script_name = "{0}/{1}-scripts/wait-for-service".format(current_dir, str(args.type))
     service = args.service
     needs_service_name = args.type is WaitingType.CONSUL
     has_no_service_name = service is None
