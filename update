@@ -23,7 +23,7 @@ source venv/bin/activate
 pip install twine wheel bumpversion
 
 echo "Bumping version $VERSION: $VERSION_BUMP"
-bumpversion --current-version $VERSION patch setup.py wait_for_service/__init__.py > /dev/null
+bumpversion --current-version $VERSION $VERSION_BUMP setup.py wait_for_service/__init__.py > /dev/null
 RESULT=$?
 if [[ $RESULT -ne 0 ]]; then
     exit $RESULT
