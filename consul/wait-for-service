@@ -1,0 +1,103 @@
+#!/bin/bash
+
+## Start argument parsing
+## https://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+    -h|--host)
+    REGISTRY_HOST="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -p|--port)
+    REGISTRY_PORT="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -s|--service)
+    SERVICE="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    --default)
+    DEFAULT=YES
+    shift # past argument
+    ;;
+    *)    # unknown option
+    POSITIONAL+=("$1") # save it in an array for later
+    shift # past argument
+    ;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+## End argument parsing
+
+REGISTRY_HOST=${REGISTRY_HOST:-"localhost"}
+REGISTRY_PORT=${REGISTRY_PORT:-"8500"}
+SERVICE=${SERVICE:-"api"}
+echo "Trying to check health status of '$SERVICE' service with the help of this registry '$REGISTRY_HOST:$REGISTRY_PORT'"
+
+REGISTRY_ENDPOINT="v1/health/checks"
+REGISTRY_CURL_TARGET="$REGISTRY_HOST:$REGISTRY_PORT/$REGISTRY_ENDPOINT/$SERVICE"
+echo "Checking endpoint: $REGISTRY_CURL_TARGET"
+
+function wait_for_container {
+	until nc -z -v -w60 $REGISTRY_HOST $REGISTRY_PORT
+	do
+		echo "Waiting for container to be up..."
+		sleep 5
+	done
+}
+
+function check_service_passing {
+	result=$(curl -s $REGISTRY_CURL_TARGET)
+	ret=$?
+	if [[ $ret -ne 0 ]]; then
+		echo "Could not curl service endpoint."
+		return $ret
+	fi
+
+	json=$(echo $result | jq -r '.')
+	ret=$?
+	if [[ $ret -ne 0 ]]; then
+		echo "Could not select result as json object."
+		return $ret
+	fi
+
+	length=$(echo $json | jq -r '. | length')
+	ret=$?
+	if [[ $ret -ne 0 ]]; then
+		echo "Could not get length of json object list"
+		return $ret
+	fi
+	if [[ $length -ne 1 ]]; then
+		echo "Expected length of json response to be exactly 1 but actually was $length"
+		return 1
+	fi
+
+	status=$(echo $json | jq -r '.[0].Status')
+	ret=$?
+	if [[ $ret -ne 0 ]]; then
+		echo "Could not select status of json object."
+		return $ret
+	fi
+
+	return 0
+}
+
+function wait_for_service {
+	until check_service_passing
+	do
+		echo "Wait for '$SERVICE' service checks passing..."
+		sleep 5
+	done
+	echo "'$SERVICE' Service is ready."
+}
+
+
+wait_for_container
+wait_for_service
