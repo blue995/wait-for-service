@@ -45,14 +45,6 @@ REGISTRY_ENDPOINT="v1/health/checks"
 REGISTRY_CURL_TARGET="$REGISTRY_HOST:$REGISTRY_PORT/$REGISTRY_ENDPOINT/$SERVICE"
 echo "Checking endpoint: $REGISTRY_CURL_TARGET"
 
-function wait_for_container {
-	until nc -z -v -w60 $REGISTRY_HOST $REGISTRY_PORT
-	do
-		echo "Waiting for container to be up..."
-		sleep 5
-	done
-}
-
 function check_service_passing {
 	result=$(curl -s $REGISTRY_CURL_TARGET)
 	ret=$?
@@ -98,6 +90,10 @@ function wait_for_service {
 	echo "'$SERVICE' Service is ready."
 }
 
-
-wait_for_container
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+$DIR/../basic-scripts/wait-for-container --host $REGISTRY_HOST --port $REGISTRY_PORT
+RES=$?
+if [[ $RES -ne 0 ]]; then
+	exit $RES
+fi
 wait_for_service

@@ -1,0 +1,53 @@
+#!/bin/bash
+
+## Start argument parsing
+## https://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+    -h|--host)
+    HOST="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -p|--port)
+    PORT="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    *)    # unknown option
+    POSITIONAL+=("$1") # save it in an array for later
+    shift # past argument
+    ;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+## End argument parsing
+
+if [[ -z "$HOST" ]]; then
+	echo "You have to provide the service host via --host|-h option."
+	exit 1
+fi
+
+if [[ -z "$PORT" ]]; then
+	echo "You have to provide the service port via --port|-p option."
+	exit 2
+fi
+
+if [[ ! -z "$POSITIONAL" ]]; then
+	echo "Unknown option: $POSITIONAL"
+	exit 3
+fi
+
+function wait_for_container {
+	until nc -z -v -w60 $HOST $PORT
+	do
+		echo "Waiting for container to be up..."
+		sleep 5
+	done
+}
+
+wait_for_container
