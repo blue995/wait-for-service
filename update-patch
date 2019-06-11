@@ -1,21 +1,4 @@
 
 #!/bin/bash
 
-if [[ ! -d venv ]]; then
-    python -m venv venv
-fi
-source venv/bin/activate
-pip install twine wheel bumpversion
-
-
-VERSION=$(python -m wait_for_service --version)
-bumpversion --current-version $VERSION patch setup.py wait_for_service/__init__.py
-
-rm -rf dist
-python setup.py sdist bdist_wheel
-
-if [[ "$1" == "--test" ]]; then
-    twine upload --repository-url https://test.pypi.org/legacy/ dist/*
-else
-    echo "nothing"
-fi
+./update patch $1

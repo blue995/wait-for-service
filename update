@@ -1,0 +1,41 @@
+
+#!/bin/bash
+
+VERSION=$(python -m wait_for_service --version)
+if [[ -e $VERSION ]]; then
+    echo "Current version unknown."
+    exit 1
+fi
+
+# major, minor, patch
+VERSION_BUMP="$1"
+if [ ! $VERSION_BUMP == "major" ] && [ ! $VERSION_BUMP == "minor" ] && [ ! $VERSION_BUMP == "patch" ]; then
+    echo "Unknown version bump: $VERSION_BUMP"
+    exit 2
+fi
+
+TEST="$2"
+
+if [[ ! -d venv ]]; then
+    python -m venv venv
+fi
+source venv/bin/activate
+pip install twine wheel bumpversion
+
+echo "Bumping version $VERSION: $VERSION_BUMP"
+bumpversion --current-version $VERSION patch setup.py wait_for_service/__init__.py > /dev/null
+RESULT=$?
+if [[ $RESULT -ne 0 ]]; then
+    exit $RESULT
+fi
+
+rm -rf dist
+python setup.py sdist bdist_wheel
+
+if [[ "$TEST" == "--test" ]]; then
+    twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+else
+    ## Not uploading directly to PyPI
+    # twine upload dist/*
+    echo "Not uploading directly to PyPI. Use --test to upload to PyPI-Test."
+fi
