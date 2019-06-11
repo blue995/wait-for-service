@@ -39,3 +39,6 @@ else
     # twine upload dist/*
     echo "Not uploading directly to PyPI. Use --test to upload to PyPI-Test."
 fi
+
+NEW_VERSION=$(python -m wait_for_service --version)
+git commit -am "[UPDATE] '$VERSION_BUMP' version update from $VERSION to $NEW_VERSION"
