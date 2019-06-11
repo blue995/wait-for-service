@@ -11,6 +11,11 @@ def version():
     return 'Version: {0}'.format(1.0)
 
 
+def check_retcode_for_error(parser: ArgumentParser, retcode: int):
+    if retcode != 0:
+        parser.print_help()
+        exit(retcode)
+
 class WaitingType(Enum):
     BASIC = 'basic'
     CONSUL = 'consul'
@@ -36,21 +41,19 @@ subprocess_args = [script_name, "--host", args.host, "--port", str(args.port)]
 
 if needs_service_name:
     if has_no_service_name:
-        parser.print_help()
-        exit(1)
+        check_retcode_for_error(parser, 1)
     subprocess_args.append('--service')
     subprocess_args.append(service)
 
 try:
     retcode = call(subprocess_args)
+    check_retcode_for_error(parser, retcode)
 except FileNotFoundError:
     print('Could not find script {0}'.format(script_name))
+    check_retcode_for_error(parser, 2)
 except TypeError as err:
     print('Some type error occurred when calling the subprocess script: {}'.format(err))
+    check_retcode_for_error(parser, 3)
 except:
-    print("unexpected error: ", sys.exc_info()[0])
-
-
-if retcode != 0:
-    parser.print_help()
-    exit(retcode)
+    print("Unexpected error: ", sys.exc_info()[0])
+    check_retcode_for_error(parser, 4)
