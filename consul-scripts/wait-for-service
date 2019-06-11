@@ -91,7 +91,7 @@ function wait_for_service {
 }
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-$DIR/../basic-scripts/wait-for-container --host $REGISTRY_HOST --port $REGISTRY_PORT
+$DIR/../basic-scripts/wait-for-service --host $REGISTRY_HOST --port $REGISTRY_PORT
 RES=$?
 if [[ $RES -ne 0 ]]; then
 	exit $RES
